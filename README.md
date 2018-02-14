@@ -6,3 +6,15 @@
 - Kaggle News Data Set 1	https://www.kaggle.com/snapcrack/all-the-news/data
 - Automatic deception detection: Methods for finding fake news	http://onlinelibrary.wiley.com/doi/10.1002/pra2.2015.145052010082/full
 - Fake News Data Set	https://www.kaggle.com/mrisdal/fake-news
+
+
+## Pipeline
+Data:
+- For each category:
+    - Create POS. word distributions
+
+Synthesizer:
+    - Takes a random article
+    - Tags words
+    - Removes nouns, adjectives, verbs
+    - Samples from distribution of words (scipy)
