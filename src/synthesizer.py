@@ -16,6 +16,11 @@ class Synthesizer:
         return pos_tag(word_tokenize(str(article)))
 
     def removePOS(self, tagged_words):
+        """
+        Removes part-of-speech from the list of tuple of words.
+        :param tagged_words:
+        :return: words without NN, VB, JJ
+        """
         new_words = []
         removed_count = 0
         for word in tagged_words:
@@ -27,6 +32,12 @@ class Synthesizer:
         return new_words, removed_count
 
     def sampleDistribution(self, pos):
+        """
+        Given a certain Part-Of-Speech... NN, JJ or VB. Method will sample from a uniform distribution then use the
+        value to sample from a word distribution.
+        :param pos: part-of-speech : NN / JJ / VB
+        :return: string : word
+        """
         s = uniform()
         return_str = ""
 
