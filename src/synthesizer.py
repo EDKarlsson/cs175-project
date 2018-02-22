@@ -62,10 +62,15 @@ class Synthesizer:
         new_article = ""
         for word, pos in tagged_article:
             if pos in ["NN", "JJ", "VB"]:
+
                 new_article += self.sampleDistribution(pos, freq_dist) + " "
             else:
                 new_article += word + " "
+                if word in [".", "!"]:
+                    new_article += "\n"
 
+
+        new_article = new_article.replace(" .", ".").replace(" ,", ",").replace(" :", ":").replace(" !", "!")
         return new_article
 
     def load_freq(self):
