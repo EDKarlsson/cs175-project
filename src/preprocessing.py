@@ -1,11 +1,7 @@
 import pandas as pd
-from scipy.sparse import csr_matrix
 import os
 import nltk
 import pickle
-import unicodedata
-import numpy as np
-import scipy
 
 global CRAP_CHAR
 CRAP_CHAR = 0

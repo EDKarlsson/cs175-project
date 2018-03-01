@@ -1,9 +1,8 @@
 from nltk import pos_tag
 import nltk
 from nltk import word_tokenize
-from numpy.random import uniform
 import pickle
-import src.dataprocessing.preprocessing as preprocess
+import src.preprocessing as preprocess
 from collections import defaultdict
 import random
 

@@ -1,5 +1,5 @@
 import keras
-import src.dataprocessing.preprocessing as preproc
+import src.preprocessing as preproc
 import numpy as np
 
 article_embedding = preproc.load_article_embedding()
