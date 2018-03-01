@@ -2,19 +2,20 @@ import keras
 import src.preprocessing as preproc
 import numpy as np
 
-article_embedding = preproc.load_article_embedding()
-article_embedding = np.array(article_embedding)
+x_train, y_train = preproc.make_sequences(1000)
 
-Xtr = article_embedding[:-1]
-Ytr = article_embedding[1:]
+
+h1_size = 100
+epochs = 10
+
 
 model = keras.Sequential()
 # Each add is a layer
-model.add(keras.layers.Embedding(128, 128))  # Embedding layer
+model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
 model.add(keras.layers.LSTM(1024))
-model.add(keras.layers.Dense(512, activation='sigmoid'))
-model.add(keras.layers.Dense(128, activation='sigmoid'))
-model.add(keras.layers.Activation('softmax'))
+model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 model.summary()
+
+model.fit(x_train, y_train, verbose=1, epochs=epochs)

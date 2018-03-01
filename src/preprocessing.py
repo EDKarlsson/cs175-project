@@ -2,9 +2,15 @@ import pandas as pd
 import os
 import nltk
 import pickle
+from keras.utils import to_categorical as tc
+import keras.preprocessing.text as ktext
+import numpy as np
 
 global CRAP_CHAR
 CRAP_CHAR = 0
+
+global NUM_VOCAB
+NUM_VOCAB = 10000
 
 
 def load_data():
@@ -26,43 +32,36 @@ def remove_stopwords(tokens, stopwords=set(nltk.corpus.stopwords.words('english'
             del tokens[key]
 
 
-def save_char_dict():
-    data = load_data()
-    articles = data['content'][:200]
-
-    st = set()
-    asciiset = set()
-    for a in articles:
-        st.update({l for l in a if ord(l) < 128})
-        asciiset.update({ord(l) for l in a if ord(l) < 128})
-
-    print(st)
-    st = sorted(st)
-    d = {c: st.index(c) for c in st}
-    print(d)
-    pickle.dump(d, open('../../out/character_dict', mode='wb'))
+def make_string(lim=150000):
+    return load_data()['content'][:lim]
 
 
-def bin_matrix():
-    data = load_data()
-    article_embedding = []
-    for a in data['content']:
-        article_embedding += [ord(c) for c in a if ord(c) < 128]
+def make_sequences(lim=150000):
+    tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1)
+    string = make_string(lim)
+    tokenizer.fit_on_texts(string)
+    encoded_text = tokenizer.texts_to_sequences(string)
 
-    # print(mat)
-    pickle.dump(article_embedding, open('../../out/article_embedding_long', mode='wb'))
+    # create -> word sequences
+    sequences = list()
+    for l in encoded_text:
+        for i in range(1, len(l)):
+            sequence = l[i - 1:i + 1]
+            sequences.append(sequence)
 
-    # return article_embedding
+    print(sequences[0:3])
+    sequences = np.array(sequences)
+    print(sequences.shape)
 
 
-def load_article_embedding(type="long"):
-    return pickle.load(open('../../data/article_embedding_{}'.format(type), mode='rb'))
+    x_train, y_train = sequences[:, 0], sequences[:, 1]
+    y_train = tc(y_train, num_classes=NUM_VOCAB)
+    return x_train, y_train
 
 
 if __name__ == '__main__':
     print('derp')
 
-    bin_matrix()
     # load_article_embedding()
 
     # data = load_data()
