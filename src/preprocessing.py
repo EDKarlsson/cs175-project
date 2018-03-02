@@ -33,13 +33,17 @@ def remove_stopwords(tokens, stopwords=set(nltk.corpus.stopwords.words('english'
             del tokens[key]
 
 
-def make_string(lim=150000):
-    return load_data()['content'][:lim]
+def make_string(lim=150000, types='all'):
+    if types == 'all':
+        return load_data()['content'][:lim]
+    else:
+        data = load_data()
+        data = data[data['publication'] == types]
+        return data['content'][:lim]
 
-
-def make_sequences(lim=150000):
+def make_sequences(lim=150000, types='all'):
     tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1)
-    string = make_string(lim)
+    string = make_string(lim, types)
     tokenizer.fit_on_texts(string)
     encoded_text = tokenizer.texts_to_sequences(string)
 
@@ -65,7 +69,7 @@ def make_sequences(lim=150000):
 
 if __name__ == '__main__':
     print('derp')
-    make_sequences(1000)
+    load_data()
 
     # load_article_embedding()
 

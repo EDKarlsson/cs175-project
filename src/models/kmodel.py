@@ -4,7 +4,7 @@ import keras
 import preprocessing as preproc
 import numpy as np
 
-x_train, y_train = preproc.make_sequences(1000)
+x_train, y_train = preproc.make_sequences(100000, types='Fox News')
 
 
 h1_size = 100
@@ -20,4 +20,9 @@ model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
 model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
 model.summary()
 
-model.fit(x_train, y_train, verbose=1, epochs=epochs)
+for e in range(epochs):
+    model.fit(x_train, y_train, verbose=1, epochs=1)
+
+    # save model
+
+    # save sample output
