@@ -6,6 +6,7 @@ from keras.utils import to_categorical as tc
 import keras.preprocessing.text as ktext
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder as OHEncode
+import unicodedata
 
 global CRAP_CHAR
 CRAP_CHAR = 0
@@ -41,26 +42,50 @@ def make_string(lim=150000, types='all'):
         data = data[data['publication'] == types]
         return data['content'][:lim]
 
-def make_sequences(lim=150000, types='all'):
-    tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1)
-    string = make_string(lim, types)
-    tokenizer.fit_on_texts(string)
-    encoded_text = tokenizer.texts_to_sequences(string)
+def make_sequences(lim=150000, types='all', format='word'):
+    global NUM_VOCAB
+    if format == 'word':
+        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1)
+        string = make_string(lim, types)
+        tokenizer.fit_on_texts(string)
+        encoded_text = tokenizer.texts_to_sequences(string)
 
-    # create -> word sequences
-    sequences = list()
-    for l in encoded_text:
-        for i in range(1, len(l)):
-            sequence = l[i - 1:i + 1]
-            sequences.append(sequence)
+        # create -> word sequences
+        sequences = list()
+        print('reaching')
+        for l in encoded_text:
+            for i in range(1, len(l)):
+                sequence = l[i - 1:i + 1]
+                sequences.append(sequence)
+    else:
+        data = make_string(lim, types)
+        chars = set()
+        for d in data:
+            for c in d:
+                chars.add(c)
+        unique = np.unique(list(chars))
 
+        char_map = {c:i for i, c in enumerate(unique)}
+        print(char_map)
+
+        sequences = list()
+        for d in data:
+            for i in range(1, len(d)):
+                sequence = [char_map[c] for c in d[i-1:i+1]]
+                sequences.append(sequence)
+
+        unique_values = np.unique(sequences)
+        NUM_VOCAB = len(unique_values)
     sequences = np.array(sequences)
 
 
     x_train, y_train = sequences[:, 0], sequences[:, 1]
 
-    reverse_word_map = dict(map(reversed, tokenizer.word_index.items()))
-
+    if format == 'word':  
+        reverse_word_map = dict(map(reversed, tokenizer.word_index.items()))
+    else:
+        tokenizer = char_map
+        reverse_word_map = dict(map(reversed, tokenizer.items()))
     return x_train, y_train, tokenizer, reverse_word_map
 
 

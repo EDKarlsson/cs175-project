@@ -11,12 +11,14 @@ import os
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.3
+config.gpu_options.per_process_gpu_memory_fraction = 0.8
 set_session(tf.Session(config=config))
 
-x_train, y_train, tokenizer, word_map = preproc.make_sequences(100000, types='Fox News')
+format = 'word'
+model_type = 'Fox News' # string to define which folder to store trained models in
 
-model_type = 'Fox' # string to define which folder to store trained models in
+x_train, y_train, tokenizer, word_map = preproc.make_sequences(100000, types=model_type, format=format)
+
 h1_size = 100
 epochs = 100000
 
@@ -41,7 +43,6 @@ def define_model():
     # Each add is a layer
     model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
     model.add(keras.layers.LSTM(1024))
-    model.add(keras.layers.Dropout(0.2))
     model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
 
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
@@ -49,8 +50,12 @@ def define_model():
     return model
 
 def sample_output(model, word_seed, num_samples=100):
-    seed = np.array(tokenizer.texts_to_sequences([word_seed]))
+    if format == 'word':
+        seed = np.array(tokenizer.texts_to_sequences([word_seed]))
+    else:
+        seed = np.array([tokenizer[word_seed]])
 
+    print(word_seed, end='')
     for i in range(num_samples):
         word_prob = model.predict(seed)[0]
 
@@ -58,28 +63,28 @@ def sample_output(model, word_seed, num_samples=100):
         for j, p in enumerate(word_prob):
             num -= p
 
-            if num < 0:
-                seed = np.array([j + 1])
+            if num <= 0:
+                seed = np.array([j])
                 break
-
-        print(' ' + word_map[seed[0]], end='')
-
+        if format == 'word':
+            print(' ' + word_map[seed[0]], end='')
+        else:
+            print(word_map[seed[0]], end='')
     print()
 
 
 def train_model(model, epochs=epochs):
     model_iter, _ = get_latest_model()
     print('Initial model num:', model_iter)
-    for e in range(epochs):
-        model.fit(x_train, y_train, verbose=1, epochs=1)
 
-        # save model
-        model_iter += 1
-        save_model(model, model_iter)
+    saver = keras.callbacks.ModelCheckpoint(filepath='saved_models/' + model_type + '/{epoch}', verbose = 1)
 
-        # print some sample output
-        print('Epoch:', model_iter)
-        sample_output(model, 'the')
+    class sampler(keras.callbacks.Callback):
+        def on_epoch_end(self, epoch, logs={}):
+            sample_output(self.model, 'the', num_samples=100)
+
+    model.fit(x_train, y_train, verbose=1, epochs=model_iter + epochs + 1, initial_epoch=model_iter + 1, callbacks=[saver, sampler()])
+
 
 
 
