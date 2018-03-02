@@ -54,17 +54,14 @@ def make_sequences(lim=150000, types='all'):
             sequence = l[i - 1:i + 1]
             sequences.append(sequence)
 
-    print(sequences[0:3])
     sequences = np.array(sequences)
-    print(sequences.shape)
 
 
     x_train, y_train = sequences[:, 0], sequences[:, 1]
-    #encoder = OHEncode()
-    #y_train = encoder.fit_transform(y_train.reshape( (len(y_train), 1) ) )
-    #print(type(y_train))
-    #y_train = tc(y_train, num_classes=NUM_VOCAB)
-    return x_train, y_train
+
+    reverse_word_map = dict(map(reversed, tokenizer.word_index.items()))
+
+    return x_train, y_train, tokenizer, reverse_word_map
 
 
 if __name__ == '__main__':
