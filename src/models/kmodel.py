@@ -1,7 +1,11 @@
 import sys
 sys.path.append('..')
 import keras
-import preprocessing as preproc
+try:
+    import preprocessing as preproc
+except:
+    import src.preprocessing as preproc
+    
 import numpy as np
 
 x_train, y_train = preproc.make_sequences(1000)
