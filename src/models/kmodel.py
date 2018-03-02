@@ -14,11 +14,11 @@ config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.3
 set_session(tf.Session(config=config))
 
-x_train, y_train, tokenizer, word_map = preproc.make_sequences(1000, types='Fox News')
+x_train, y_train, tokenizer, word_map = preproc.make_sequences(100000, types='Fox News')
 
 model_type = 'Fox' # string to define which folder to store trained models in
 h1_size = 100
-epochs = 10
+epochs = 100000
 
 
 def get_latest_model(model_type=model_type):
@@ -41,6 +41,7 @@ def define_model():
     # Each add is a layer
     model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
     model.add(keras.layers.LSTM(1024))
+    model.add(keras.layers.Dropout(0.2))
     model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
 
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
