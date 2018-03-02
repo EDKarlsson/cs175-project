@@ -5,6 +5,7 @@ import pickle
 from keras.utils import to_categorical as tc
 import keras.preprocessing.text as ktext
 import numpy as np
+from sklearn.preprocessing import OneHotEncoder as OHEncode
 
 global CRAP_CHAR
 CRAP_CHAR = 0
@@ -55,12 +56,16 @@ def make_sequences(lim=150000):
 
 
     x_train, y_train = sequences[:, 0], sequences[:, 1]
-    y_train = tc(y_train, num_classes=NUM_VOCAB)
+    #encoder = OHEncode()
+    #y_train = encoder.fit_transform(y_train.reshape( (len(y_train), 1) ) )
+    #print(type(y_train))
+    #y_train = tc(y_train, num_classes=NUM_VOCAB)
     return x_train, y_train
 
 
 if __name__ == '__main__':
     print('derp')
+    make_sequences(1000)
 
     # load_article_embedding()
 
