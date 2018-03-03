@@ -12,12 +12,18 @@ global CRAP_CHAR
 CRAP_CHAR = 0
 
 global NUM_VOCAB
-NUM_VOCAB = 10000
+NUM_VOCAB = 1000
 
 
 def load_data():
-    DATA_DIR = "../../data"
-    ARTICLES = os.listdir(DATA_DIR)
+    DATA_DIR = "../data"
+    try:
+        ARTICLES = os.listdir(DATA_DIR)
+    except:
+        print("../data directory not found")
+        DATA_DIR = "../../data"
+        ARTICLES = os.listdir(DATA_DIR)
+
     return pd.concat([pd.read_csv(DATA_DIR + "/" + f) for f in ARTICLES if '.csv' in f], ignore_index=True)
 
 
@@ -42,13 +48,27 @@ def make_string(lim=150000, types='all'):
         data = data[data['publication'] == types]
         return data['content'][:lim]
 
+
+def pair_word_punctuation(string_list:list):
+    pairs = ""
+    for s in string_list:
+        tokens = nltk.word_tokenize(s)
+        for i, token in enumerate(tokens):
+            if token in ['.', ';', ':', '!', '-', '@', '#', '$', '%', '^', '&']:
+                pairs += " " + tokens[i-1] + token
+        s += pairs
+
+
 def make_sequences(lim=150000, types='all', format='word'):
     global NUM_VOCAB
     if format == 'word':
-        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1)
+        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='')
         string = make_string(lim, types)
+        pair_word_punctuation(string)
+        # print(string[0])
         tokenizer.fit_on_texts(string)
         encoded_text = tokenizer.texts_to_sequences(string)
+        print(len(encoded_text[0]))
 
         # create -> word sequences
         sequences = list()
@@ -65,23 +85,22 @@ def make_sequences(lim=150000, types='all', format='word'):
                 chars.add(c)
         unique = np.unique(list(chars))
 
-        char_map = {c:i for i, c in enumerate(unique)}
+        char_map = {c: i for i, c in enumerate(unique)}
         print(char_map)
 
         sequences = list()
         for d in data:
             for i in range(1, len(d)):
-                sequence = [char_map[c] for c in d[i-1:i+1]]
+                sequence = [char_map[c] for c in d[i - 1:i + 1]]
                 sequences.append(sequence)
 
         unique_values = np.unique(sequences)
         NUM_VOCAB = len(unique_values)
     sequences = np.array(sequences)
 
-
     x_train, y_train = sequences[:, 0], sequences[:, 1]
 
-    if format == 'word':  
+    if format == 'word':
         reverse_word_map = dict(map(reversed, tokenizer.word_index.items()))
     else:
         tokenizer = char_map
@@ -92,6 +111,7 @@ def make_sequences(lim=150000, types='all', format='word'):
 if __name__ == '__main__':
     print('derp')
     load_data()
+    make_sequences(1)
 
     # load_article_embedding()
 
