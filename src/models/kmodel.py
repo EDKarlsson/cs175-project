@@ -30,7 +30,7 @@ format = 'word'
 # model_type = 'Fox News'  # string to define which folder to store trained models in
 model_type = args.modeltype  # string to define which folder to store trained models in
 
-x_train, y_train, tokenizer, word_map = preproc.make_sequences(100000, types=model_type, format=format)
+x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format)
 
 h1_size = 100
 epochs = args.epochs
