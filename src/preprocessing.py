@@ -64,11 +64,10 @@ def make_sequences(lim=150000, types='all', format='word'):
     if format == 'word':
         tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='')
         string = make_string(lim, types)
-        pair_word_punctuation(string)
+        #pair_word_punctuation(string)
         # print(string[0])
         tokenizer.fit_on_texts(string)
         encoded_text = tokenizer.texts_to_sequences(string)
-        print(len(encoded_text[0]))
 
         # create -> word sequences
         sequences = list()
