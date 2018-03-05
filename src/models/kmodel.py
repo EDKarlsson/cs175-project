@@ -17,9 +17,10 @@ from keras.backend.tensorflow_backend import set_session
 # Parse command line and setting configurations
 parser = argparse.ArgumentParser()
 parser.add_argument("--modeltype", help="Set the model type [publication]", default="all")
-parser.add_argument("--epochs", type=int, help="Number of epochs", default=100000)
-parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=10000)
+parser.add_argument("--epochs", type=int, help="Number of epochs", default=100)
+parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=3000)
 parser.add_argument("--articles", type=int, help="Number of articles", default=80000)
+parser.add_argument("--saveperepoch")
 args = parser.parse_args()
 
 config = tf.ConfigProto()
@@ -32,7 +33,7 @@ model_type = args.modeltype  # string to define which folder to store trained mo
 
 x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format)
 
-h1_size = 100
+h1_size = 200
 epochs = args.epochs
 
 preproc.NUM_VOCAB = args.vocab
@@ -59,7 +60,7 @@ def define_model():
     model = keras.models.Sequential()
     # Each add is a layer
     model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
-    model.add(keras.layers.LSTM(1024))
+    model.add(keras.layers.LSTM(2048))
     model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
 
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
