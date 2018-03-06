@@ -30,16 +30,16 @@ args = parser.parse_args()
 
 config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = args.gpu_memory
-config.gpu_options.allow_growth=True
+config.gpu_options.allow_growth = True
 set_session(tf.Session(config=config))
 
 format = 'word'
-model_type = args.publication # string to define which folder to store trained models in
+model_type = args.publication  # string to define which folder to store trained models in
 
 x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format,
                                                                ngram=args.ngram)
 
-h1_size = 50
+h1_size = 10
 epochs = args.epochs
 
 preproc.NUM_VOCAB = args.vocab
@@ -125,11 +125,11 @@ def train_model(model, epochs=epochs):
             sample_output(self.model, 'the', num_samples=100)
 
     model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, initial_epoch=model_iter + 1,
-              callbacks=[saver(filepath=filepath, verbose=1), sampler()])
+              callbacks=[sampler(), saver(filepath=filepath, verbose=1)])
     return model
 
 
 if __name__ == '__main__':
     print('vocab size:', preproc.NUM_VOCAB)
     model = define_model()
-    train_model(model)
+    train_model(model, args.epochs)
