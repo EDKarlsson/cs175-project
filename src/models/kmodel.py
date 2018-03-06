@@ -17,25 +17,27 @@ from keras.regularizers import l2
 
 # Parse command line and setting configurations
 parser = argparse.ArgumentParser()
-parser.add_argument("--modeltype", help="Set the model type [publication]", default="all")
+parser.add_argument("--publication", type=str, help="Set the model type [publication]", default="all")
 parser.add_argument("--epochs", type=int, help="Number of epochs", default=30)
 parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=3000)
 parser.add_argument("--articles", type=int, help="Number of articles", default=600)
 parser.add_argument("--ngram", type=int, help="Use NGram to split strings", default=0)
-parser.add_argument("--saveperepoch")
+parser.add_argument("--verbose", type=bool, help="Verbose Keras output", default=True)
+parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch", default=1)
+parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=512)
 args = parser.parse_args()
 
 config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.8
 set_session(tf.Session(config=config))
 
-
 format = 'word'
-model_type = args.modeltype  # string to define which folder to store trained models in
+model_type = args.publication # string to define which folder to store trained models in
 
-x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format, ngram=args.ngram)
+x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format,
+                                                               ngram=args.ngram)
 
-h1_size = 200
+h1_size = 50
 epochs = args.epochs
 
 preproc.NUM_VOCAB = args.vocab
@@ -54,7 +56,7 @@ def save_model(model, iteration):
     model.save('saved_models/' + model_type + '/' + str(iteration))
 
 
-def create_model(units=2048, dropout=.2):
+def create_model(units=args.lstm, dropout=.2):
     model = keras.models.Sequential()
     # Each add is a layer
     model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
@@ -111,15 +113,19 @@ def train_model(model, epochs=epochs):
 
     filepath += '/{epoch}'
 
-    saver = keras.callbacks.ModelCheckpoint(filepath=filepath, verbose=1)
+    class saver(keras.callbacks.ModelCheckpoint):
+        def on_epoch_end(self, epoch, logs=None):
+            if ((epoch - 1) % args.saveperepoch == 0):
+                super().on_epoch_end(epochs, logs)
 
     class sampler(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
             sample_output(self.model, 'the', num_samples=100)
 
-    model.fit(x_train, y_train, verbose=1, epochs=model_iter + epochs + 1, initial_epoch=model_iter + 1,
-              callbacks=[saver, sampler()])
+    model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, initial_epoch=model_iter + 1,
+              callbacks=[saver(filepath=filepath, verbose=1), sampler()])
     return model
+
 
 if __name__ == '__main__':
     print('vocab size:', preproc.NUM_VOCAB)
