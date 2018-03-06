@@ -21,6 +21,7 @@ parser.add_argument("--modeltype", help="Set the model type [publication]", defa
 parser.add_argument("--epochs", type=int, help="Number of epochs", default=30)
 parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=3000)
 parser.add_argument("--articles", type=int, help="Number of articles", default=600)
+parser.add_argument("--ngram", type=int, help="Use NGram to split strings", default=0)
 parser.add_argument("--saveperepoch")
 args = parser.parse_args()
 
@@ -28,11 +29,11 @@ config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.8
 set_session(tf.Session(config=config))
 
+
 format = 'word'
-# model_type = 'Fox News'  # string to define which folder to store trained models in
 model_type = args.modeltype  # string to define which folder to store trained models in
 
-x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format)
+x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format, ngram=args.ngram)
 
 h1_size = 200
 epochs = args.epochs

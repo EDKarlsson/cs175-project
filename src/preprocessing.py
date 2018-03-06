@@ -40,17 +40,13 @@ def remove_stopwords(tokens, stopwords=set(nltk.corpus.stopwords.words('english'
             del tokens[key]
 
 
-def make_string(lim=150000, types='all', split_token="<[split]>"):
+def make_string(lim=150000, types='all'):
     if types == 'all':
         return load_data()['content'][:lim]
     else:
         data = load_data()
         data = data[data['publication'] == types]
         return data['content'][:lim]
-
-
-def make_ngram(sentence: str, n):
-    return nltk.ngrams(sentence.split(), n)
 
 
 def insert_split_token(grams, token):
@@ -60,6 +56,10 @@ def insert_split_token(grams, token):
             ms += (word + " ")
         ms += (token + " ")
     return ms
+
+
+def make_ngram(sentence: str, n):
+    return nltk.ngrams(sentence.split(), n)
 
 
 def pair_word_punctuation(string_list: list):
@@ -72,7 +72,7 @@ def pair_word_punctuation(string_list: list):
         s += pairs
 
 
-def make_sequences(lim=150000, types='all', format='word'):
+def make_sequences(lim=150000, types='all', format='word', ngram=0):
     global NUM_VOCAB
     if format == 'word':
         tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='')
