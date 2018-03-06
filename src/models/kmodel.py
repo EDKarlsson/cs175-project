@@ -25,10 +25,12 @@ parser.add_argument("--ngram", type=int, help="Use NGram to split strings", defa
 parser.add_argument("--verbose", type=bool, help="Verbose Keras output", default=True)
 parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch", default=1)
 parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=512)
+parser.add_argument("--gpu_memory", type=float, help="Set GPU Memory Limit", default=.8)
 args = parser.parse_args()
 
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.8
+config.gpu_options.per_process_gpu_memory_fraction = args.gpu_memory
+config.gpu_options.allow_growth=True
 set_session(tf.Session(config=config))
 
 format = 'word'
