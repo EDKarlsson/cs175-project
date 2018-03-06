@@ -13,13 +13,14 @@ import os
 import tensorflow as tf
 import argparse
 from keras.backend.tensorflow_backend import set_session
+from keras.regularizers import l2
 
 # Parse command line and setting configurations
 parser = argparse.ArgumentParser()
 parser.add_argument("--modeltype", help="Set the model type [publication]", default="all")
-parser.add_argument("--epochs", type=int, help="Number of epochs", default=100)
+parser.add_argument("--epochs", type=int, help="Number of epochs", default=30)
 parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=3000)
-parser.add_argument("--articles", type=int, help="Number of articles", default=80000)
+parser.add_argument("--articles", type=int, help="Number of articles", default=600)
 parser.add_argument("--saveperepoch")
 args = parser.parse_args()
 
@@ -52,20 +53,22 @@ def save_model(model, iteration):
     model.save('saved_models/' + model_type + '/' + str(iteration))
 
 
+def create_model(units=2048, dropout=.2):
+    model = keras.models.Sequential()
+    # Each add is a layer
+    model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
+    model.add(keras.layers.LSTM(units, recurrent_dropout=dropout))
+    model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
+    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+    model.summary()
+    return model
+
+
 def define_model():
     name, model = get_latest_model()
     if model != None:
         return model
-
-    model = keras.models.Sequential()
-    # Each add is a layer
-    model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
-    model.add(keras.layers.LSTM(2048))
-    model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
-
-    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
-    model.summary()
-    return model
+    return create_model()
 
 
 def sample_output(model, word_seed, num_samples=100):
@@ -115,7 +118,7 @@ def train_model(model, epochs=epochs):
 
     model.fit(x_train, y_train, verbose=1, epochs=model_iter + epochs + 1, initial_epoch=model_iter + 1,
               callbacks=[saver, sampler()])
-
+    return model
 
 if __name__ == '__main__':
     print('vocab size:', preproc.NUM_VOCAB)

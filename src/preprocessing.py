@@ -40,7 +40,7 @@ def remove_stopwords(tokens, stopwords=set(nltk.corpus.stopwords.words('english'
             del tokens[key]
 
 
-def make_string(lim=150000, types='all'):
+def make_string(lim=150000, types='all', split_token="<[split]>"):
     if types == 'all':
         return load_data()['content'][:lim]
     else:
@@ -49,13 +49,26 @@ def make_string(lim=150000, types='all'):
         return data['content'][:lim]
 
 
-def pair_word_punctuation(string_list:list):
+def make_ngram(sentence: str, n):
+    return nltk.ngrams(sentence.split(), n)
+
+
+def insert_split_token(grams, token):
+    ms = ""
+    for gram in grams:
+        for word in gram:
+            ms += (word + " ")
+        ms += (token + " ")
+    return ms
+
+
+def pair_word_punctuation(string_list: list):
     pairs = ""
     for s in string_list:
         tokens = nltk.word_tokenize(s)
         for i, token in enumerate(tokens):
             if token in ['.', ';', ':', '!', '-', '@', '#', '$', '%', '^', '&']:
-                pairs += " " + tokens[i-1] + token
+                pairs += " " + tokens[i - 1] + token
         s += pairs
 
 
@@ -64,7 +77,7 @@ def make_sequences(lim=150000, types='all', format='word'):
     if format == 'word':
         tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='')
         string = make_string(lim, types)
-        #pair_word_punctuation(string)
+        # pair_word_punctuation(string)
         # print(string[0])
         tokenizer.fit_on_texts(string)
         encoded_text = tokenizer.texts_to_sequences(string)
