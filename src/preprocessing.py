@@ -7,6 +7,7 @@ import keras.preprocessing.text as ktext
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder as OHEncode
 import unicodedata
+import string as pystring
 
 global CRAP_CHAR
 CRAP_CHAR = 0
@@ -62,14 +63,12 @@ def make_ngram(sentence: str, n):
     return nltk.ngrams(sentence.split(), n)
 
 
-def pair_word_punctuation(string_list: list):
-    pairs = ""
+def sep_word_punctuation(string_list: list):
     for s in string_list:
-        tokens = nltk.word_tokenize(s)
-        for i, token in enumerate(tokens):
-            if token in ['.', ';', ':', '!', '-', '@', '#', '$', '%', '^', '&']:
-                pairs += " " + tokens[i - 1] + token
-        s += pairs
+        for punc in pystring.punctuation:
+            s.replace(punc, " " + punc + " ")
+
+
 
 
 def make_sequences(lim=150000, types='all', format='word', ngram=0):
@@ -77,6 +76,7 @@ def make_sequences(lim=150000, types='all', format='word', ngram=0):
     if format == 'word':
         tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='')
         string = make_string(lim, types)
+        sep_word_punctuation(string)
         # pair_word_punctuation(string)
         # print(string[0])
         tokenizer.fit_on_texts(string)
