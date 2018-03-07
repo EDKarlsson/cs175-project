@@ -1,25 +1,26 @@
 from sklearn.cluster import AgglomerativeClustering
 from sklearn import manifold
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
+
+try:
+    import preprocessing as pp
+except:
+    import src.preprocessing as pp
 import time
 
+np.random.seed(0)
 
-def load_vectors():
-    return pd.read_csv('../data/corpus_vectors.txt', sep=" ", header=None)
+words = 500
 
+print("Starting : %.2fs " % (time.time()))
 
-words = 100
+vectors, vector_labels = pp.get_vectors()
+vectors = vectors.toarray()
 
-print("Loading vectors...")
-vectors = load_vectors().as_matrix()
-np.random.shuffle(vectors)  # Shuffle the data points
-vector_labels = vectors[:words, 0]
+# np.random.shuffle(vectors)  # Shuffle the data points
 print(vector_labels)
 X = vectors[:words, 1:]
-
-np.random.seed(0)
 
 
 # ----------------------------------------------------------------------
@@ -30,7 +31,7 @@ def plot_clustering(X_red, X, labels, title=None):
 
     plt.figure(figsize=(6, 4))
     for i in range(X_red.shape[0]):
-        plt.text(X_red[i, 0], X_red[i, 1], str(vector_labels[i]),
+        plt.text(X_red[i, 0], X_red[i, 1], str(vector_labels[labels[i]]),
                  color=plt.cm.spectral(labels[i] / 10.),
                  fontdict={'weight': 'bold', 'size': 9})
 
@@ -42,11 +43,11 @@ def plot_clustering(X_red, X, labels, title=None):
     plt.tight_layout()
 
 
-print("Computing embedding")
+print("Computing embedding : %.2fs " % (time.time()))
 X_red = manifold.SpectralEmbedding(n_components=50).fit_transform(X)
 print("Done.")
 
-print("Starting Clustering")
+print("Starting Clustering".format(time.time()))
 # linkage = ["ward", "complete", "average"]
 link = "ward"
 # for link in linkage:
@@ -56,6 +57,7 @@ t0 = time.time()
 clustering.fit(X_red)
 # print("%s : %.2fs" % (link, time.time() - t0))
 
+print("Plotting cluster : %.2fs " % (time.time()))
 plot_clustering(X_red, X, clustering.labels_, "%s linkage" % link)
 
 plt.show()

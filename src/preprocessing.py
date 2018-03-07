@@ -4,6 +4,10 @@ import nltk
 import keras.preprocessing.text as ktext
 import numpy as np
 import string as pystring
+import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+CURRENT_DIR = os.getcwd()
 
 global CRAP_CHAR
 CRAP_CHAR = 0
@@ -23,24 +27,56 @@ def create_corpus():
             d = d.replace(p + " ", " ").replace("\t", " ").replace(" " + p, " ").replace("“", "").replace("”", "")
         s += d
 
-
     f = open('corpus.txt', 'w')
     f.write(s)
 
 
 def load_data():
     DATA_DIR = "../data"
-    try:
-        ARTICLES = os.listdir(DATA_DIR)
-    except:
-        print("../data directory not found")
-        DATA_DIR = "../../data"
-        ARTICLES = os.listdir(DATA_DIR)
+    print("Current directory " + os.getcwd())
+    root_content = os.listdir(".")
+    if "data" in root_content:
+        ARTICLES = os.listdir("data")
+    else:
+        try:
+            ARTICLES = os.listdir(DATA_DIR)
+        except:
+            print("../data directory not found")
+            DATA_DIR = "../../data"
+            ARTICLES = os.listdir(DATA_DIR)
 
     return pd.concat([pd.read_csv(DATA_DIR + "/" + f) for f in ARTICLES if '.csv' in f], ignore_index=True)
 
 
-def bag_of_words(article):
+def get_vectors(remake_binary=False):
+    print("Loading vectors...")
+    if "src" in CURRENT_DIR:
+        os.chdir("..")
+        data_dir = os.getcwd() + "/data/"
+        os.chdir(CURRENT_DIR)
+    else:
+        data_dir = CURRENT_DIR + "/data"
+
+    if remake_binary or os.path.isfile(data_dir + "tfid_vectors") == False:
+        data = load_data()
+        publishers = list(set(data['publication']))
+        vectorizer = TfidfVectorizer()
+        vectors = vectorizer.fit_transform(data['content'])
+        print("Saving Vectors")
+        pickle.dump(vectors, open(data_dir + "tfid_vectors", "wb"))
+        pickle.dump(publishers, open(data_dir + "publishers", "wb"))
+    else:
+        print("Loading pickle vector data")
+        vectors = pickle.load(open(data_dir + "tfid_vectors", "rb"))
+        publishers = list(pickle.load(open(data_dir + "publishers", "rb")))
+    return vectors, publishers
+
+
+def bag_of_words(article, remove_punc=False):
+    if remove_punc:
+        for p in pystring.punctuation:
+            article = article.replace(p + " ", " ").replace("\t", " ").replace(" " + p, " ").replace("“", "").replace(
+                "”", "").replace('’ ', ' ').replace(". ", " ")
     tokens = nltk.word_tokenize(article)
     fdist = nltk.FreqDist(tokens)
     remove_stopwords(fdist)
