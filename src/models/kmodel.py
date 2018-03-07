@@ -65,8 +65,6 @@ def create_model(units=args.lstm, dropout=.2):
     model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
     model.add(keras.layers.LSTM(units, recurrent_dropout=dropout))
     model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
-    model.add(keras.layers.LSTM(units, recurrent_dropout=dropout))
-    model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
     model.summary()
     return model

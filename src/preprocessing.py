@@ -65,6 +65,7 @@ def get_vectors(remake_binary=False):
         print("Saving Vectors")
         pickle.dump(vectors, open(data_dir + "tfid_vectors", "wb"))
         pickle.dump(publishers, open(data_dir + "publishers", "wb"))
+
     else:
         print("Loading pickle vector data")
         vectors = pickle.load(open(data_dir + "tfid_vectors", "rb"))

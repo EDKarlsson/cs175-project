@@ -10,14 +10,15 @@ def load_vectors():
     return pd.read_csv('../data/corpus_vectors.txt', sep=" ", header=None)
 
 
-words = 100
+truncate_beg = 100
+words = 700
 
 print("Loading vectors...")
-vectors = load_vectors().as_matrix()
+vectors = load_vectors().as_matrix()[truncate_beg:words]
 np.random.shuffle(vectors)  # Shuffle the data points
-vector_labels = vectors[:words, 0]
+vector_labels = vectors[:, 0]
 print(vector_labels)
-X = vectors[:words, 1:]
+X = vectors[:, 1:]
 
 np.random.seed(0)
 
@@ -47,14 +48,10 @@ X_red = manifold.SpectralEmbedding(n_components=50).fit_transform(X)
 print("Done.")
 
 print("Starting Clustering")
-# linkage = ["ward", "complete", "average"]
 link = "ward"
-# for link in linkage:
-#     print("Linkage : {}".format(link))
 clustering = AgglomerativeClustering(n_clusters=8)
 t0 = time.time()
 clustering.fit(X_red)
-# print("%s : %.2fs" % (link, time.time() - t0))
 
 plot_clustering(X_red, X, clustering.labels_, "%s linkage" % link)
 

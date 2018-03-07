@@ -13,7 +13,7 @@ np.random.seed(0)
 
 words = 500
 
-time0 = time()
+time0 = time.time()
 
 vectors, vector_labels = pp.get_vectors()
 print("Took : %.2fs " % time0)
@@ -46,7 +46,7 @@ def plot_clustering(X_red, X, labels, title=None):
 
 
 print("Computing embedding")
-X_red = manifold.SpectralEmbedding(n_components=50).fit_transform(X)
+X_red = manifold.SpectralEmbedding(n_components=5).fit_transform(X)
 print("Done. : %.2fs " % (time.time() - time0))
 
 print("Starting Clustering".format(time.time()))
@@ -54,7 +54,7 @@ print("Starting Clustering".format(time.time()))
 link = "ward"
 # for link in linkage:
 #     print("Linkage : {}".format(link))
-clustering = AgglomerativeClustering(n_clusters=8)
+clustering = AgglomerativeClustering(n_clusters=5)
 t0 = time.time()
 clustering.fit(X_red)
 # print("%s : %.2fs" % (link, time.time() - t0))
