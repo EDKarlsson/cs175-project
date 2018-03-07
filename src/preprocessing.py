@@ -1,12 +1,8 @@
 import pandas as pd
 import os
 import nltk
-import pickle
-from keras.utils import to_categorical as tc
 import keras.preprocessing.text as ktext
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder as OHEncode
-import unicodedata
 import string as pystring
 
 global CRAP_CHAR
@@ -14,6 +10,22 @@ CRAP_CHAR = 0
 
 global NUM_VOCAB
 NUM_VOCAB = 1000
+
+
+def create_corpus():
+    data = make_string()
+    s = ""
+    stopwords = set(nltk.corpus.stopwords.words('english'))
+    for d in data:
+        for sw in stopwords:
+            d = d.replace(" " + sw + " ", " ")
+        for p in pystring.punctuation:
+            d = d.replace(p + " ", " ").replace("\t", " ").replace(" " + p, " ").replace("“", "").replace("”", "")
+        s += d
+
+
+    f = open('corpus.txt', 'w')
+    f.write(s)
 
 
 def load_data():
@@ -64,23 +76,28 @@ def make_ngram(sentence: str, n):
 
 
 def sep_word_punctuation(string_list: list):
-    for s in string_list:
-        for punc in pystring.punctuation:
-            s.replace(punc, " " + punc + " ")
+    unique = set(c for article in string_list for c in article)
+    unique = [c for c in unique if (not str(c).isalpha() and not str(c).isnumeric() and c != '\'')]
+    for i, s in enumerate(string_list):
+        sp = s
+        for u in unique:
+            sp = sp.replace(u, " " + u + " ")
+
+        string_list[i] = sp
+    return string_list
 
 
-
-
-def make_sequences(lim=150000, types='all', format='word', ngram=0):
+def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0):
     global NUM_VOCAB
     if format == 'word':
-        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='')
-        string = make_string(lim, types)
-        sep_word_punctuation(string)
+        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='', split=split)
+        articles = make_string(lim, types)
+        articles = sep_word_punctuation(articles)
+
         # pair_word_punctuation(string)
         # print(string[0])
-        tokenizer.fit_on_texts(string)
-        encoded_text = tokenizer.texts_to_sequences(string)
+        tokenizer.fit_on_texts(articles)
+        encoded_text = tokenizer.texts_to_sequences(articles)
 
         # create -> word sequences
         sequences = list()

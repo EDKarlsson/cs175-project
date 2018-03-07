@@ -24,8 +24,9 @@ parser.add_argument("--articles", type=int, help="Number of articles", default=6
 parser.add_argument("--ngram", type=int, help="Use NGram to split strings", default=0)
 parser.add_argument("--verbose", type=bool, help="Verbose Keras output", default=True)
 parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch", default=1)
-parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=512)
+parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=256)
 parser.add_argument("--gpu_memory", type=float, help="Set GPU Memory Limit", default=.8)
+parser.add_argument("--split", type=str, help="Char or string to split each sentence on.", default=" ")
 args = parser.parse_args()
 
 config = tf.ConfigProto()
@@ -37,7 +38,7 @@ format = 'word'
 model_type = args.publication  # string to define which folder to store trained models in
 
 x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format,
-                                                               ngram=args.ngram)
+                                                               ngram=args.ngram, split=args.split)
 
 h1_size = 10
 epochs = args.epochs
@@ -62,6 +63,8 @@ def create_model(units=args.lstm, dropout=.2):
     model = keras.models.Sequential()
     # Each add is a layer
     model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
+    model.add(keras.layers.LSTM(units, recurrent_dropout=dropout))
+    model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
     model.add(keras.layers.LSTM(units, recurrent_dropout=dropout))
     model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
