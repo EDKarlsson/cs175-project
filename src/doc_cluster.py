@@ -13,9 +13,11 @@ np.random.seed(0)
 
 words = 500
 
-print("Starting : %.2fs " % (time.time()))
+time0 = time()
 
 vectors, vector_labels = pp.get_vectors()
+print("Took : %.2fs " % time0)
+
 vectors = vectors.toarray()
 
 # np.random.shuffle(vectors)  # Shuffle the data points
@@ -43,9 +45,9 @@ def plot_clustering(X_red, X, labels, title=None):
     plt.tight_layout()
 
 
-print("Computing embedding : %.2fs " % (time.time()))
+print("Computing embedding")
 X_red = manifold.SpectralEmbedding(n_components=50).fit_transform(X)
-print("Done.")
+print("Done. : %.2fs " % (time.time() - time0))
 
 print("Starting Clustering".format(time.time()))
 # linkage = ["ward", "complete", "average"]
@@ -57,7 +59,8 @@ t0 = time.time()
 clustering.fit(X_red)
 # print("%s : %.2fs" % (link, time.time() - t0))
 
-print("Plotting cluster : %.2fs " % (time.time()))
+print("Plotting cluster")
 plot_clustering(X_red, X, clustering.labels_, "%s linkage" % link)
+print("Done : %.2fs " % (time.time() - time0))
 
 plt.show()
