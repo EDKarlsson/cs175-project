@@ -5,6 +5,7 @@ import keras.preprocessing.text as ktext
 import numpy as np
 import string as pystring
 import pickle
+import textrank
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 CURRENT_DIR = os.getcwd()
@@ -46,6 +47,39 @@ def load_data():
             ARTICLES = os.listdir(DATA_DIR)
 
     return pd.concat([pd.read_csv(DATA_DIR + "/" + f) for f in ARTICLES if '.csv' in f], ignore_index=True)
+
+
+def create_summaries(beg=0, end=100, save_per_iter=0):
+    '''
+    Starting at index 1 of load data
+    :return:
+    '''
+    data = load_data().as_matrix()[beg:end]
+
+    article_sum = []
+    for i, article in enumerate(data):
+        print('articles/{}'.format(beg + i))
+        article_sum.append({
+            'publisher': article[3],
+            'title': article[2],
+            'keyphrases': textrank.extract_key_phrases(article[9]),
+            'summary': textrank.extract_sentences(article[9], summary_length=200)
+        })
+        if save_per_iter > 0 and i % save_per_iter == 0 and i > 0:
+            pickle.dump(article_sum,
+                        open("summerized_articles_{}-{}.dat".format(i - save_per_iter + 1 + beg, i + 1 + beg), "wb"))
+
+    if save_per_iter == 0:
+        pickle.dump(article_sum, open("summerized_articles_{}-{}.dat".format(beg, end), "wb"))
+
+
+def load_summerized_data():
+    return pickle.load(open("summerized_articles_0-100.dat", "rb"))
+
+
+def get_summerized_articles():
+    art = load_summerized_data()
+    return [a['summary'] for a in art]
 
 
 def get_vectors(remake_binary=False):
@@ -124,11 +158,14 @@ def sep_word_punctuation(string_list: list):
     return string_list
 
 
-def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0):
+def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, use_summary=True):
     global NUM_VOCAB
+    if not use_summary:
+        articles = make_string(lim, types)
+    else:
+        articles = get_summerized_articles()
     if format == 'word':
         tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='', split=split)
-        articles = make_string(lim, types)
         articles = sep_word_punctuation(articles)
 
         # pair_word_punctuation(string)
@@ -144,9 +181,8 @@ def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0):
                 sequence = l[i - 1:i + 1]
                 sequences.append(sequence)
     else:
-        data = make_string(lim, types)
         chars = set()
-        for d in data:
+        for d in articles:
             for c in d:
                 chars.add(c)
         unique = np.unique(list(chars))
@@ -155,7 +191,7 @@ def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0):
         print(char_map)
 
         sequences = list()
-        for d in data:
+        for d in articles:
             for i in range(1, len(d)):
                 sequence = [char_map[c] for c in d[i - 1:i + 1]]
                 sequences.append(sequence)

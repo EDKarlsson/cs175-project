@@ -40,7 +40,7 @@ model_type = args.publication  # string to define which folder to store trained 
 x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format,
                                                                ngram=args.ngram, split=args.split)
 
-h1_size = 10
+h1_size = 30
 epochs = args.epochs
 
 preproc.NUM_VOCAB = args.vocab
@@ -77,7 +77,7 @@ def define_model():
     return create_model()
 
 
-def sample_output(model, word_seed, num_samples=100):
+def sample_output(model, word_seed, num_samples=100, temperature = 1.):
     if format == 'word':
         seed = np.array(tokenizer.texts_to_sequences([word_seed]))
     else:
@@ -87,13 +87,18 @@ def sample_output(model, word_seed, num_samples=100):
     for i in range(num_samples):
         word_prob = model.predict(seed)[0]
 
-        num = np.random.random()
-        for j, p in enumerate(word_prob):
-            num -= p
+        word_prob = np.log(word_prob) / temperature
+        word_prob = np.exp(word_prob) / np.sum(np.exp(word_prob))
+        seed = np.random.choice(range(word_prob.shape[0]), p=word_prob)
+        seed = np.array([seed])
 
-            if num <= 0:
-                seed = np.array([j])
-                break
+        # num = np.random.random()
+        # for j, p in enumerate(word_prob):
+        #     num -= p
+        #
+        #     if num <= 0:
+        #         seed = np.array([j])
+        #         break
         if format == 'word':
             print(' ' + word_map[seed[0]], end='')
         else:
@@ -123,9 +128,9 @@ def train_model(model, epochs=epochs):
 
     class sampler(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
-            sample_output(self.model, 'the', num_samples=100)
+            sample_output(self.model, 'The', num_samples=100)
 
-    model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, initial_epoch=model_iter + 1,
+    model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, batch_size=16, initial_epoch=model_iter + 1,
               callbacks=[sampler(), saver(filepath=filepath, verbose=1)])
     return model
 
