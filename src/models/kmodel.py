@@ -27,6 +27,7 @@ parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch",
 parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=256)
 parser.add_argument("--gpu_memory", type=float, help="Set GPU Memory Limit", default=.8)
 parser.add_argument("--split", type=str, help="Char or string to split each sentence on.", default=" ")
+parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole", default=None)
 args = parser.parse_args()
 
 config = tf.ConfigProto()
@@ -38,7 +39,7 @@ format = 'word'
 model_type = args.publication  # string to define which folder to store trained models in
 
 x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format,
-                                                               ngram=args.ngram, split=args.split)
+                                                               ngram=args.ngram, split=args.split, article_type=args.art_type)
 
 h1_size = 30
 epochs = args.epochs

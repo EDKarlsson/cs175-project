@@ -10,6 +10,11 @@ import textrank
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 CURRENT_DIR = os.getcwd()
+DATA_DIR = ""
+if "src" in CURRENT_DIR:
+    DATA_DIR = CURRENT_DIR.replace("src", "data")
+elif CURRENT_DIR.split('/')[-1] == "cs175-project":
+    DATA_DIR = CURRENT_DIR + "/data"
 
 global CRAP_CHAR
 CRAP_CHAR = 0
@@ -92,15 +97,22 @@ def get_summerized_articles():
     return [a['summary'] for a in art]
 
 
-def get_sentence_tokens(publication=None):
-    data = load_data()
-    sentences = []
-    print("Tokenizing Sentences")
-    if publication:
-        data = data[data['publication'] == publication]
-    for article in data['content']:
-        sentences.append(nltk.sent_tokenize(article))
-    return sentences
+def load_sentence_tokens(limit=1000, publication=None, overwrite=False):
+    SENTENCE_TOKENS_FILE = "sentence.tokens"
+    print("Loading sentence tokens")
+    if overwrite or SENTENCE_TOKENS_FILE not in set(os.listdir(DATA_DIR)):
+        data = load_data()
+        sentences = []
+        print("Tokenizing Sentences")
+        if publication:
+            data = data[data['publication'] == publication]
+        for article in data['content']:
+            sentences.extend(nltk.sent_tokenize(article))
+        if SENTENCE_TOKENS_FILE not in set(os.listdir(DATA_DIR)):
+            pickle.dump(sentences, open(DATA_DIR + "/" + SENTENCE_TOKENS_FILE, "wb"))
+    else:
+        sentences = pickle.load(open(DATA_DIR + "/" + SENTENCE_TOKENS_FILE, "rb"))
+    return sentences[:limit]
 
 
 def get_vectors(remake_binary=False):
@@ -129,6 +141,7 @@ def get_vectors(remake_binary=False):
 
 
 def bag_of_words(article, remove_punc=False):
+    print("Creating bag of words")
     if remove_punc:
         for p in pystring.punctuation:
             article = article.replace(p + " ", " ").replace("\t", " ").replace(" " + p, " ").replace("“", "").replace(
@@ -140,12 +153,14 @@ def bag_of_words(article, remove_punc=False):
 
 
 def remove_stopwords(tokens, stopwords=set(nltk.corpus.stopwords.words('english'))):
+    print("Removing stopwords")
     for key in list(tokens.keys()):
         if key in stopwords:
             del tokens[key]
 
 
 def make_string(lim=150000, types='all'):
+    print("Making strings")
     if types == 'all':
         return load_data()['content'][:lim]
     else:
@@ -166,8 +181,8 @@ def insert_split_token(grams, token):
 def make_ngram(sentence: str, n):
     return nltk.ngrams(sentence.split(), n)
 
-
 def sep_word_punctuation(string_list: list):
+    print("Separating punctuations from words")
     unique = set(c for article in string_list for c in article)
     unique = [c for c in unique if (not str(c).isalpha() and not str(c).isnumeric() and c != '\'')]
     for i, s in enumerate(string_list):
@@ -191,19 +206,25 @@ def make_pos_sentences(article):
     return article
 
 
-def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, use_summary=True):
+def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, article_type="complete"):
     global NUM_VOCAB
-    if not use_summary:
+    print("Making Sequences")
+    if article_type in "summary":
         articles = make_string(lim, types)
+    elif article_type in "sentences":
+        articles = load_sentence_tokens()
     else:
         articles = get_summerized_articles()
     if format == 'word':
         tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='', split=split)
-        articles = sep_word_punctuation(articles)
+        if article_type != "sentences":
+            articles = sep_word_punctuation(articles)
 
         # pair_word_punctuation(string)
         # print(string[0])
+        print("Fitting tokenizer on text")
         tokenizer.fit_on_texts(articles)
+        print("Texts to sequences")
         encoded_text = tokenizer.texts_to_sequences(articles)
 
         # create -> word sequences
@@ -220,6 +241,7 @@ def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, u
                 chars.add(c)
         unique = np.unique(list(chars))
 
+        print("Creating character map")
         char_map = {c: i for i, c in enumerate(unique)}
         print(char_map)
 
@@ -235,6 +257,7 @@ def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, u
 
     x_train, y_train = sequences[:, 0], sequences[:, 1]
 
+    print("Creating reverse word map")
     if format == 'word':
         reverse_word_map = dict(map(reversed, tokenizer.word_index.items()))
     else:
