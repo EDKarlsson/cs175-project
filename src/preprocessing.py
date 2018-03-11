@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import nltk
 import keras.preprocessing.text as ktext
+from nltk.corpus.reader.plaintext import PlaintextCorpusReader
 import numpy as np
 import string as pystring
 import pickle
@@ -18,7 +19,9 @@ NUM_VOCAB = 1000
 
 
 def create_corpus():
+    print("Creating Corpus")
     data = make_string()
+    corpus_filename = "corpus"
     s = ""
     stopwords = set(nltk.corpus.stopwords.words('english'))
     for d in data:
@@ -26,10 +29,14 @@ def create_corpus():
             d = d.replace(" " + sw + " ", " ")
         for p in pystring.punctuation:
             d = d.replace(p + " ", " ").replace("\t", " ").replace(" " + p, " ").replace("“", "").replace("”", "")
-        s += d
+        s += (d + "\n\n")
 
-    f = open('corpus.txt', 'w')
+    print("Writing corpus to file.")
+    f = open('{}.txt'.format(corpus_filename), 'w')
     f.write(s)
+    f.close()
+    newcorpus = PlaintextCorpusReader('.', '{}.txt'.format(corpus_filename))
+    return newcorpus
 
 
 def load_data():
@@ -54,6 +61,7 @@ def create_summaries(beg=0, end=100, save_per_iter=0):
     Starting at index 1 of load data
     :return:
     '''
+    print("Generating Summaries...")
     data = load_data().as_matrix()[beg:end]
 
     article_sum = []
@@ -74,12 +82,25 @@ def create_summaries(beg=0, end=100, save_per_iter=0):
 
 
 def load_summerized_data():
+    print("Loading Summerized Data")
     return pickle.load(open("summerized_articles_0-100.dat", "rb"))
 
 
 def get_summerized_articles():
+    print("Retrieving Summerized Articles")
     art = load_summerized_data()
     return [a['summary'] for a in art]
+
+
+def get_sentence_tokens(publication=None):
+    data = load_data()
+    sentences = []
+    print("Tokenizing Sentences")
+    if publication:
+        data = data[data['publication'] == publication]
+    for article in data['content']:
+        sentences.append(nltk.sent_tokenize(article))
+    return sentences
 
 
 def get_vectors(remake_binary=False):
@@ -156,6 +177,18 @@ def sep_word_punctuation(string_list: list):
 
         string_list[i] = sp
     return string_list
+
+
+def make_pos_sentences(article):
+    '''
+
+    Special Puncs: “ ”
+    :param lim:
+    :return:
+    '''
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+
+    return article
 
 
 def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, use_summary=True):
