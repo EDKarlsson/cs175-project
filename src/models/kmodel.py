@@ -19,12 +19,12 @@ from keras.regularizers import l2
 parser = argparse.ArgumentParser()
 parser.add_argument("--publication", type=str, help="Set the model type [publication]", default="all")
 parser.add_argument("--epochs", type=int, help="Number of epochs", default=30)
-parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=3000)
-parser.add_argument("--articles", type=int, help="Number of articles", default=600)
+parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=5000)
+parser.add_argument("--articles", type=int, help="Number of articles", default=10000)
 parser.add_argument("--ngram", type=int, help="Use NGram to split strings", default=0)
 parser.add_argument("--verbose", type=bool, help="Verbose Keras output", default=True)
 parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch", default=1)
-parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=256)
+parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=512)
 parser.add_argument("--gpu_memory", type=float, help="Set GPU Memory Limit", default=.8)
 parser.add_argument("--split", type=str, help="Char or string to split each sentence on.", default=" ")
 parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole", default=None)
@@ -38,10 +38,10 @@ set_session(tf.Session(config=config))
 format = 'word'
 model_type = args.publication  # string to define which folder to store trained models in
 
-x_train, y_train, tokenizer, word_map = preproc.make_sequences(args.articles, types=model_type, format=format,
+x_train, y_train, tokenizer, word_map, len_of_sentences, seeds_list = preproc.make_sequences(args.articles, types=model_type, format=format,
                                                                ngram=args.ngram, split=args.split, article_type=args.art_type)
 
-h1_size = 30
+h1_size = 50
 epochs = args.epochs
 
 preproc.NUM_VOCAB = args.vocab
@@ -78,32 +78,41 @@ def define_model():
     return create_model()
 
 
-def sample_output(model, word_seed, num_samples=100, temperature = 1.):
+def sample_output(model, word_seed, num_samples=5, temperature = 1.):
     if format == 'word':
         seed = np.array(tokenizer.texts_to_sequences([word_seed]))
     else:
         seed = np.array([tokenizer[word_seed]])
 
-    print(word_seed, end='')
+    #print(word_seed, end='')
+    sentence = ""
+    print("SEED ", seed)
+    sentence += word_map[seed[0][0]]
     for i in range(num_samples):
-        word_prob = model.predict(seed)[0]
+        print("Sentence #", i)
+        for _ in range(np.random.choice(len_of_sentences)):
+            word_prob = model.predict(seed)[0]
 
-        word_prob = np.log(word_prob) / temperature
-        word_prob = np.exp(word_prob) / np.sum(np.exp(word_prob))
-        seed = np.random.choice(range(word_prob.shape[0]), p=word_prob)
-        seed = np.array([seed])
+            word_prob = np.log(word_prob) / temperature
+            word_prob = np.exp(word_prob) / np.sum(np.exp(word_prob))
+            seed = np.random.choice(range(word_prob.shape[0]), p=word_prob)
+            seed = np.array([seed])
 
-        # num = np.random.random()
-        # for j, p in enumerate(word_prob):
-        #     num -= p
-        #
-        #     if num <= 0:
-        #         seed = np.array([j])
-        #         break
-        if format == 'word':
-            print(' ' + word_map[seed[0]], end='')
-        else:
-            print(word_map[seed[0]], end='')
+            # num = np.random.random()
+            # for j, p in enumerate(word_prob):
+            #     num -= p
+            #
+            #     if num <= 0:
+            #         seed = np.array([j])
+            #         break
+            if format == 'word':
+                sentence += ' ' + word_map[seed[0]]
+            else:
+                sentence += word_map[seed[0]]
+        sentence = sentence[0].upper() + sentence[1:]
+        print("{}. ".format(sentence))
+        seed = np.array([np.random.choice(seeds_list)])
+        sentence = word_map[seed[0]]
     print()
 
 
@@ -129,7 +138,7 @@ def train_model(model, epochs=epochs):
 
     class sampler(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
-            sample_output(self.model, 'The', num_samples=100)
+            sample_output(self.model, 'the')
 
     model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, batch_size=16, initial_epoch=model_iter + 1,
               callbacks=[sampler(), saver(filepath=filepath, verbose=1)])

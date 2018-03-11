@@ -97,7 +97,7 @@ def get_summerized_articles():
     return [a['summary'] for a in art]
 
 
-def load_sentence_tokens(limit=1000, publication=None, overwrite=False):
+def load_sentence_tokens(limit=10000, publication=None, overwrite=False):
     SENTENCE_TOKENS_FILE = "sentence.tokens"
     print("Loading sentence tokens")
     if overwrite or SENTENCE_TOKENS_FILE not in set(os.listdir(DATA_DIR)):
@@ -181,15 +181,17 @@ def insert_split_token(grams, token):
 def make_ngram(sentence: str, n):
     return nltk.ngrams(sentence.split(), n)
 
+
 def sep_word_punctuation(string_list: list):
     print("Separating punctuations from words")
     unique = set(c for article in string_list for c in article)
-    unique = [c for c in unique if (not str(c).isalpha() and not str(c).isnumeric() and c != '\'')]
+    # unique = [c for c in unique if (not str(c).isalpha() and not str(c).isnumeric() and c != '\'')]
+    unique = open("token_set.tokens", "r").readline()
+    unique = eval(unique)
     for i, s in enumerate(string_list):
         sp = s
         for u in unique:
             sp = sp.replace(u, " " + u + " ")
-
         string_list[i] = sp
     return string_list
 
@@ -206,19 +208,19 @@ def make_pos_sentences(article):
     return article
 
 
-def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, article_type="complete"):
+def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, article_type="complete"):
     global NUM_VOCAB
     print("Making Sequences")
     if article_type in "summary":
         articles = make_string(lim, types)
     elif article_type in "sentences":
-        articles = load_sentence_tokens()
+        articles = load_sentence_tokens(limit=lim)
     else:
         articles = get_summerized_articles()
     if format == 'word':
-        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='', split=split)
-        if article_type != "sentences":
-            articles = sep_word_punctuation(articles)
+        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='”“"#$%&()*+,-/.!?:;<=>@[\\]^_`{|}~\t\n', split=split)
+        # if article_type != "sentences":
+        # articles = sep_word_punctuation(articles)
 
         # pair_word_punctuation(string)
         # print(string[0])
@@ -226,6 +228,9 @@ def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, a
         tokenizer.fit_on_texts(articles)
         print("Texts to sequences")
         encoded_text = tokenizer.texts_to_sequences(articles)
+        len_of_sentences = [len(a) for a in encoded_text]
+        seeds = [a[0] for a in encoded_text if a]
+
 
         # create -> word sequences
         sequences = list()
@@ -263,7 +268,7 @@ def make_sequences(lim=150000, types='all', format='word', split=" ", ngram=0, a
     else:
         tokenizer = char_map
         reverse_word_map = dict(map(reversed, tokenizer.items()))
-    return x_train, y_train, tokenizer, reverse_word_map
+    return x_train, y_train, tokenizer, reverse_word_map, len_of_sentences, seeds
 
 
 if __name__ == '__main__':
