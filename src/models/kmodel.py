@@ -115,7 +115,7 @@ def define_model():
     return create_model()
 
 
-def sample_output(model, word_seed, tokenizer, num_samples=5, temperature=1., sentence_length=len_of_sentences):
+def sample_output(model, word_seed, tokenizer, num_samples=5, temperature=1.):
     if format == 'word':
         seed = np.array(tokenizer.texts_to_sequences([word_seed]))
     else:
@@ -126,7 +126,7 @@ def sample_output(model, word_seed, tokenizer, num_samples=5, temperature=1., se
     sentence += word_map[seed[0][0]]
     for i in range(num_samples):
         print("Sentence #", i)
-        for _ in range(np.random.choice(sentence_length)):
+        for _ in range(np.random.choice(len_of_sentences)):
             word_prob = model.predict(seed)[0]
 
             word_prob = np.log(word_prob) / temperature

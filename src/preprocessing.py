@@ -6,7 +6,7 @@ from nltk.corpus.reader.plaintext import PlaintextCorpusReader
 import numpy as np
 import string as pystring
 import pickle
-import textrank
+#import textrank
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 CURRENT_DIR = os.getcwd()
@@ -212,9 +212,9 @@ def make_pos_sentences(article):
 def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, article_type="complete"):
     global NUM_VOCAB
     print("Making Sequences")
-    if article_type in "summary":
+    if article_type == "summary":
         articles = get_summerized_articles()
-    elif article_type in "sentences":
+    elif article_type == "sentences":
         articles = load_sentence_tokens(limit=lim)
     else:
         articles = make_string(lim, types)
