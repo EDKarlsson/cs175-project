@@ -38,6 +38,7 @@ set_session(tf.Session(config=config))
 
 format = 'word'
 model_type = args.publication  # string to define which folder to store trained models in
+preproc.NUM_VOCAB = args.vocab
 
 x_train, y_train, tokenizer, word_map, len_of_sentences, seeds_list = preproc.make_sequences(args.articles,
                                                                                              types=model_type,
@@ -49,7 +50,6 @@ x_train, y_train, tokenizer, word_map, len_of_sentences, seeds_list = preproc.ma
 h1_size = 50
 epochs = args.epochs
 
-preproc.NUM_VOCAB = args.vocab
 
 
 def load_vectors():
@@ -72,6 +72,7 @@ def create_vector_embedding(in_dim=preproc.NUM_VOCAB, out_dim=h1_size, input_len
         if index < in_dim:
             embedding_weights[index, :] = word_vectors[word] if word in word_vectors.keys() else np.random.random(50)
 
+    print(np.count_nonzero(embedding_weights == 0, axis = 0))
     print(embedding_weights)
     # define inputs here
     embedding_layer = keras.layers.Embedding(output_dim=out_dim, input_dim=in_dim, trainable=True,
@@ -167,6 +168,7 @@ def train_model(model, epochs=epochs):
 
     class sampler(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
+            pass
             sample_output(self.model, 'the', tokenizer=tokenizer)
 
     model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, batch_size=16,
