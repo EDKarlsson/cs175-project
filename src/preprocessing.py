@@ -20,7 +20,7 @@ global CRAP_CHAR
 CRAP_CHAR = 0
 
 global NUM_VOCAB
-NUM_VOCAB = 1000
+NUM_VOCAB = 3000
 
 
 def create_corpus():
@@ -30,6 +30,7 @@ def create_corpus():
     s = ""
     stopwords = set(nltk.corpus.stopwords.words('english'))
     for d in data:
+        d = d.lower()
         for sw in stopwords:
             d = d.replace(" " + sw + " ", " ")
         for p in pystring.punctuation:
@@ -212,11 +213,11 @@ def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, ar
     global NUM_VOCAB
     print("Making Sequences")
     if article_type in "summary":
-        articles = make_string(lim, types)
+        articles = get_summerized_articles()
     elif article_type in "sentences":
         articles = load_sentence_tokens(limit=lim)
     else:
-        articles = get_summerized_articles()
+        articles = make_string(lim, types)
     if format == 'word':
         tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='”“"#$%&()*+,-/.!?:;<=>@[\\]^_`{|}~\t\n', split=split)
         # if article_type != "sentences":
@@ -264,11 +265,11 @@ def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, ar
 
     print("Creating reverse word map")
     if format == 'word':
-        reverse_word_map = dict(map(reversed, tokenizer.word_index.items()))
+        word_map = dict(map(reversed, tokenizer.word_index.items()))
     else:
         tokenizer = char_map
-        reverse_word_map = dict(map(reversed, tokenizer.items()))
-    return x_train, y_train, tokenizer, reverse_word_map, len_of_sentences, seeds
+        word_map = dict(map(reversed, tokenizer.items()))
+    return x_train, y_train, tokenizer,word_map, len_of_sentences, seeds
 
 
 if __name__ == '__main__':

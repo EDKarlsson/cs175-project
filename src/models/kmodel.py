@@ -8,6 +8,7 @@ try:
 except:
     import src.preprocessing as preproc
 
+import pandas as pd
 import numpy as np
 import os
 import tensorflow as tf
@@ -27,7 +28,7 @@ parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch",
 parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=512)
 parser.add_argument("--gpu_memory", type=float, help="Set GPU Memory Limit", default=.8)
 parser.add_argument("--split", type=str, help="Char or string to split each sentence on.", default=" ")
-parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole", default=None)
+parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole", default="")
 args = parser.parse_args()
 
 config = tf.ConfigProto()
@@ -38,13 +39,47 @@ set_session(tf.Session(config=config))
 format = 'word'
 model_type = args.publication  # string to define which folder to store trained models in
 
-x_train, y_train, tokenizer, word_map, len_of_sentences, seeds_list = preproc.make_sequences(args.articles, types=model_type, format=format,
-                                                               ngram=args.ngram, split=args.split, article_type=args.art_type)
+x_train, y_train, tokenizer, word_map, len_of_sentences, seeds_list = preproc.make_sequences(args.articles,
+                                                                                             types=model_type,
+                                                                                             format=format,
+                                                                                             ngram=args.ngram,
+                                                                                             split=args.split,
+                                                                                             article_type=args.art_type)
 
 h1_size = 50
 epochs = args.epochs
 
 preproc.NUM_VOCAB = args.vocab
+
+
+def load_vectors():
+    return pd.read_csv('../data/corpus_vectors.txt', sep=" ", header=None)
+
+
+def create_vector_embedding(in_dim=preproc.NUM_VOCAB, out_dim=h1_size, input_length=1):
+    '''
+    Creates a custom vector embedding layer for keras.
+    :param in_dim:
+    :param out_dim:
+    :param input_length:
+    :return:
+    '''
+    word_vectors = {w[0]: w[1:] for w in load_vectors().as_matrix()}
+    # assemble the embedding_weights in one numpy array
+    n_symbols = len(word_map) + 1  # adding 1 to account for 0th index (for masking)
+    embedding_weights = np.zeros((in_dim, 50))
+    for index, word in word_map.items():
+        if index < in_dim:
+            embedding_weights[index, :] = word_vectors[word] if word in word_vectors.keys() else np.random.random(50)
+
+    print(embedding_weights)
+    # define inputs here
+    embedding_layer = keras.layers.Embedding(output_dim=out_dim, input_dim=in_dim, trainable=True,
+                                             input_length=input_length)
+    embedding_layer.build((None,))  # if you don't do this, the next step won't work
+    embedding_layer.set_weights([embedding_weights])
+
+    return embedding_layer
 
 
 def get_latest_model(model_type=model_type):
@@ -62,10 +97,12 @@ def save_model(model, iteration):
 
 def create_model(units=args.lstm, dropout=.2):
     model = keras.models.Sequential()
+    corpus_vectors = load_vectors().as_matrix()
     # Each add is a layer
-    model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
-    model.add(keras.layers.LSTM(units, recurrent_dropout=dropout))
-    model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax'))
+    # model.add(keras.layers.Embedding(preproc.NUM_VOCAB, h1_size, input_length=1))  # Embedding layer
+    model.add(create_vector_embedding())
+    model.add(keras.layers.Bidirectional(keras.layers.LSTM(units, recurrent_dropout=dropout)))
+    model.add(keras.layers.Dense(preproc.NUM_VOCAB, activation='softmax', kernel_initializer='he_normal'))
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
     model.summary()
     return model
@@ -78,19 +115,18 @@ def define_model():
     return create_model()
 
 
-def sample_output(model, word_seed, num_samples=5, temperature = 1.):
+def sample_output(model, word_seed, tokenizer, num_samples=5, temperature=1., sentence_length=len_of_sentences):
     if format == 'word':
         seed = np.array(tokenizer.texts_to_sequences([word_seed]))
     else:
         seed = np.array([tokenizer[word_seed]])
 
-    #print(word_seed, end='')
     sentence = ""
     print("SEED ", seed)
     sentence += word_map[seed[0][0]]
     for i in range(num_samples):
         print("Sentence #", i)
-        for _ in range(np.random.choice(len_of_sentences)):
+        for _ in range(np.random.choice(sentence_length)):
             word_prob = model.predict(seed)[0]
 
             word_prob = np.log(word_prob) / temperature
@@ -98,13 +134,6 @@ def sample_output(model, word_seed, num_samples=5, temperature = 1.):
             seed = np.random.choice(range(word_prob.shape[0]), p=word_prob)
             seed = np.array([seed])
 
-            # num = np.random.random()
-            # for j, p in enumerate(word_prob):
-            #     num -= p
-            #
-            #     if num <= 0:
-            #         seed = np.array([j])
-            #         break
             if format == 'word':
                 sentence += ' ' + word_map[seed[0]]
             else:
@@ -134,13 +163,14 @@ def train_model(model, epochs=epochs):
     class saver(keras.callbacks.ModelCheckpoint):
         def on_epoch_end(self, epoch, logs=None):
             if ((epoch - 1) % args.saveperepoch == 0):
-                super().on_epoch_end(epochs, logs)
+                super().on_epoch_end(epoch, logs)
 
     class sampler(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs={}):
-            sample_output(self.model, 'the')
+            sample_output(self.model, 'the', tokenizer=tokenizer)
 
-    model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, batch_size=16, initial_epoch=model_iter + 1,
+    model.fit(x_train, y_train, verbose=args.verbose, epochs=model_iter + epochs + 1, batch_size=16,
+              initial_epoch=model_iter + 1,
               callbacks=[sampler(), saver(filepath=filepath, verbose=1)])
     return model
 
