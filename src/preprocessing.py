@@ -30,7 +30,7 @@ def create_corpus():
     s = ""
     stopwords = set(nltk.corpus.stopwords.words('english'))
     for d in data:
-        d = d.lower()
+        # d = d.lower()
         for sw in stopwords:
             d = d.replace(" " + sw + " ", " ")
         for p in pystring.punctuation:
