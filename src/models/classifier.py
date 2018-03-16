@@ -104,13 +104,23 @@ def get_fake_article_set(model, data, tokenizer, overwrite=False, lim=10):
 
 
 def get_train_data(X, Y):
+    """
+    Given X and Y data, shuffle the data and create a X,Y Training set and X,Y Testing set.
+    :param X: Data points
+    :param Y: Labels
+    :return: Xtrain, Ytrain, Xtest, Ytest
+    """
     x_train, x_test, y_train, y_test = sklearn.model_selection.train_test_split(X, Y)
     print('Finished generating articles')
-
     return x_train, x_test, y_train, y_test
 
 
 def create_bag_of_words(article):
+    """
+    Create a bag of words for the articles
+    :param article:
+    :return:
+    """
     non_stopwords = [i for w, i in vocab.items() if w not in stopwords]
 
     bag_of_words = np.zeros(pp.NUM_VOCAB + 1)

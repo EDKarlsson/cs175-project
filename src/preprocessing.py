@@ -6,7 +6,7 @@ from nltk.corpus.reader.plaintext import PlaintextCorpusReader
 import numpy as np
 import string as pystring
 import pickle
-#import textrank
+# import textrank
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 CURRENT_DIR = os.getcwd()
@@ -24,6 +24,11 @@ NUM_VOCAB = 3000
 
 
 def create_corpus():
+    """
+    Method will load the entire article data set then convert into a PlainTextCorpusReader. It will remove stop words
+    and punctuations from the articles. Writes it to a file then returns the NLTK PlainTextCorpusReader
+    :return: PlainTextCorpusReader
+    """
     print("Creating Corpus")
     data = make_string()
     corpus_filename = "corpus"
@@ -46,6 +51,11 @@ def create_corpus():
 
 
 def load_data():
+    """
+    Loads the News article data set and returns a Pandas Dataframe containing all news articles
+    :return: Pandas:DataFrame
+    """
+    print("Loading Data")
     DATA_DIR = "../data"
     print("Current directory " + os.getcwd())
     root_content = os.listdir(".")
@@ -63,10 +73,9 @@ def load_data():
 
 
 def create_summaries(beg=0, end=100, save_per_iter=0):
-    '''
-    Starting at index 1 of load data
-    :return:
-    '''
+    """
+    Creates summaries using TextRank. This is currently not used.
+    """
     print("Generating Summaries...")
     data = load_data().as_matrix()[beg:end]
 
@@ -88,17 +97,33 @@ def create_summaries(beg=0, end=100, save_per_iter=0):
 
 
 def load_summerized_data():
+    """
+    Method will load the summarized data set
+    :return: Summarized articles
+    """
     print("Loading Summerized Data")
     return pickle.load(open("summerized_articles_0-100.dat", "rb"))
 
 
 def get_summerized_articles():
+    """
+    Returns just the summaries in the summarized article data set.
+    :return: Set of String Summaries
+    """
     print("Retrieving Summerized Articles")
     art = load_summerized_data()
     return [a['summary'] for a in art]
 
 
 def load_sentence_tokens(limit=10000, publication=None, overwrite=False):
+    """
+    Will try to load previously saved tokenized sentences. If it does not exist then it will load the news article
+    dataset and tokenize each article into sentences and pickle it to a tokens file.
+    :param limit: Number of sentences to retrieve
+    :param publication: Only create sentences for specific publications (This will not work if already created)
+    :param overwrite: Overwrite the previously created sentence tokens
+    :return: Sentences
+    """
     SENTENCE_TOKENS_FILE = "sentence.tokens"
     print("Loading sentence tokens")
     if overwrite or SENTENCE_TOKENS_FILE not in set(os.listdir(DATA_DIR)):
@@ -117,6 +142,11 @@ def load_sentence_tokens(limit=10000, publication=None, overwrite=False):
 
 
 def get_vectors(remake_binary=False):
+    """
+    Creates TFID vectors for the data set if it does not already exists. If it does, load the vectors and return them.
+    :param remake_binary: Recreate the TFID Vector files
+    :return: TFID Vectors, Publication Labels
+    """
     print("Loading vectors...")
     if "src" in CURRENT_DIR:
         os.chdir("..")
@@ -142,6 +172,13 @@ def get_vectors(remake_binary=False):
 
 
 def bag_of_words(article, remove_punc=False):
+    """
+    Creates a bag of words from the article then creating a frequency distribution, removing stop words then returning it.
+    There is the option to remove punctuations from the articles if the parameter is provided. By default this is false.
+    :param article: Article String
+    :param remove_punc: Boolean
+    :return: FreqDist
+    """
     print("Creating bag of words")
     if remove_punc:
         for p in pystring.punctuation:
@@ -154,6 +191,12 @@ def bag_of_words(article, remove_punc=False):
 
 
 def remove_stopwords(tokens, stopwords=set(nltk.corpus.stopwords.words('english'))):
+    """
+    Removes stop words from the list of tokens based on the english stopwords in NLTK.
+    :param tokens: List of tokens
+    :param stopwords: NLTK Stopwords
+    :return: List of Tokens
+    """
     print("Removing stopwords")
     for key in list(tokens.keys()):
         if key in stopwords:
@@ -161,6 +204,12 @@ def remove_stopwords(tokens, stopwords=set(nltk.corpus.stopwords.words('english'
 
 
 def make_string(lim=150000, types='all'):
+    """
+    For each article in the entire data set, retrieve and return the specified number of articles.
+    :param lim: Limit of articles
+    :param types: Publications
+    :return: List of Articles
+    """
     print("Making strings")
     if types == 'all':
         return load_data()['content'][:lim]
@@ -171,6 +220,12 @@ def make_string(lim=150000, types='all'):
 
 
 def insert_split_token(grams, token):
+    """
+    Takes a gram and a split token, then creates a sentence with the token located in between the grams.
+    :param grams: NGram of words
+    :param token: Token to insert
+    :return: String
+    """
     ms = ""
     for gram in grams:
         for word in gram:
@@ -180,10 +235,21 @@ def insert_split_token(grams, token):
 
 
 def make_ngram(sentence: str, n):
+    """
+    Splits a sentence into n-grams
+    :param sentence: String of a sentence
+    :param n: Number of grams to split to
+    :return: Sentence -> ngram
+    """
     return nltk.ngrams(sentence.split(), n)
 
 
 def sep_word_punctuation(string_list: list):
+    """
+    Separates the words from punctuations in the sentences. e.g. Hello! -> Hello !
+    :param string_list: List of strings
+    :return: List of strings
+    """
     print("Separating punctuations from words")
     unique = set(c for article in string_list for c in article)
     # unique = [c for c in unique if (not str(c).isalpha() and not str(c).isnumeric() and c != '\'')]
@@ -197,19 +263,21 @@ def sep_word_punctuation(string_list: list):
     return string_list
 
 
-def make_pos_sentences(article):
-    '''
-
-    Special Puncs: “ ”
-    :param lim:
-    :return:
-    '''
-    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-
-    return article
-
-
 def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, article_type="whole"):
+    """
+    Creates sequences for training, a tokenizer, a word map, sentence lengths and seeds to use.
+    Method will either load sentences, articles or words to be turned into training data. Which ever is used will be
+    given to a tokenizer that is used to create a word map. The word map is an index mapping to each word.
+    :param lim: Number of articles or sentences to create
+    :param types: Publication Name
+    :param format: Word, Character
+    :param split: Split token for tokenizer
+    :param ngram: NGram to create <- Deprecated
+    :param article_type: Summaries, Sentences, Whole articles
+    :return: XTrain, YTrain, tokenizer, word map, length of sentences, seeds.
+    """
+    len_of_sentences = 0
+    seeds = None
     global NUM_VOCAB
     print("Making Sequences")
     if article_type == "summary":
@@ -219,7 +287,8 @@ def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, ar
     else:
         articles = make_string(lim, types)
     if format == 'word':
-        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='”“"#$%&()*+,-/.!?:;<=>@[\\]^_`{|}~\t\n', split=split)
+        tokenizer = ktext.Tokenizer(num_words=NUM_VOCAB - 1, filters='”“"#$%&()*+,-/.!?:;<=>@[\\]^_`{|}~\t\n',
+                                    split=split)
         # if article_type != "sentences":
         # articles = sep_word_punctuation(articles)
 
@@ -236,7 +305,6 @@ def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, ar
         len_of_sentences = [len(a) for a in sent_tok]
 
         seeds = [a[0] for a in encoded_text if a]
-
 
         # create -> word sequences
         sequences = list()
@@ -274,7 +342,7 @@ def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, ar
     else:
         tokenizer = char_map
         word_map = dict(map(reversed, tokenizer.items()))
-    return x_train, y_train, tokenizer,word_map, len_of_sentences, seeds
+    return x_train, y_train, tokenizer, word_map, len_of_sentences, seeds
 
 
 if __name__ == '__main__':
