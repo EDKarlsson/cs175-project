@@ -229,7 +229,12 @@ def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, ar
         tokenizer.fit_on_texts(articles)
         print("Texts to sequences")
         encoded_text = tokenizer.texts_to_sequences(articles)
-        len_of_sentences = [len(a) for a in encoded_text]
+
+        # always use sentences to sample
+        sent_art = load_sentence_tokens(limit=lim)
+        sent_tok = tokenizer.texts_to_sequences(sent_art)
+        len_of_sentences = [len(a) for a in sent_tok]
+
         seeds = [a[0] for a in encoded_text if a]
 
 
