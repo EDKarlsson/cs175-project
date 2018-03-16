@@ -209,7 +209,7 @@ def make_pos_sentences(article):
     return article
 
 
-def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, article_type="complete"):
+def make_sequences(lim=10000, types='all', format='word', split=" ", ngram=0, article_type="whole"):
     global NUM_VOCAB
     print("Making Sequences")
     if article_type == "summary":

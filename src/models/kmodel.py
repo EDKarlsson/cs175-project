@@ -28,7 +28,7 @@ parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch",
 parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=512)
 parser.add_argument("--gpu_memory", type=float, help="Set GPU Memory Limit", default=.8)
 parser.add_argument("--split", type=str, help="Char or string to split each sentence on.", default=" ")
-parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole", default="")
+parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole", default="whole")
 args = parser.parse_args()
 
 config = tf.ConfigProto()
@@ -46,7 +46,7 @@ x_train, y_train, tokenizer, word_map, len_of_sentences, seeds_list = preproc.ma
                                                                                              split=args.split,
                                                                                              article_type=args.art_type)
 
-h1_size = 50
+h1_size = 100
 epochs = args.epochs
 
 preproc.NUM_VOCAB = args.vocab
@@ -64,13 +64,14 @@ def create_vector_embedding(in_dim=preproc.NUM_VOCAB, out_dim=h1_size, input_len
     :param input_length:
     :return:
     '''
-    word_vectors = {w[0]: w[1:] for w in load_vectors().as_matrix()}
+    vector_matrix = load_vectors().as_matrix()
+    word_vectors = {w[0]: w[1:] for w in vector_matrix}
     # assemble the embedding_weights in one numpy array
     n_symbols = len(word_map) + 1  # adding 1 to account for 0th index (for masking)
-    embedding_weights = np.zeros((in_dim, 50))
+    embedding_weights = np.zeros((in_dim, 100))
     for index, word in word_map.items():
         if index < in_dim:
-            embedding_weights[index, :] = word_vectors[word] if word in word_vectors.keys() else np.random.random(50)
+            embedding_weights[index, :] = word_vectors[word] if word in word_vectors.keys() else np.random.random(100)
 
     print(embedding_weights)
     # define inputs here
