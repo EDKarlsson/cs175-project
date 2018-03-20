@@ -112,6 +112,9 @@ def get_fake_article_set(model, data, tokenizer, lim=10, overwrite=False, ):
     fake_articles = fake_articles[good_sims]
     real_articles = real_articles[good_sims]
 
+    pickle.dump(np.concatenate([fake_articles[:100], real_articles[:100]]),
+                open(DATA_DIR + "/unshuffled_test_set.project", "wb"))
+
     fake_train, fake_test, ftrain_target, ftest_target = get_train_data(fake_articles, np.ones(len(fake_articles)))
     real_train, real_test, rtrain_target, rtest_target = get_train_data(real_articles, np.zeros(len(real_articles)))
 
@@ -162,8 +165,6 @@ if __name__ == "__main__":
 
     x_train, x_test, y_train, y_test = get_fake_article_set(model, data, kmodel.tokenizer, 1000)
 
-    pickle.dump(x_test[:200], open(DATA_DIR + "/x_test_sample.txt", "wb"))
-    pickle.dump(y_test[:200], open(DATA_DIR + "/y_test_sample.txt", "wb"))
     print(x_train.shape)
     print('Starting Training')
     lr = sklearn.linear_model.LogisticRegression(n_jobs=4)

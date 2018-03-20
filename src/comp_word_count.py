@@ -1,7 +1,5 @@
 import os
 import pickle
-import matplotlib.pyplot as plt
-import numpy as np
 import nltk
 
 CURRENT_DIR = os.getcwd()

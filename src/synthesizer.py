@@ -8,7 +8,10 @@ except:
     import src.preprocessing as preprocess
 from collections import defaultdict
 import random
+import os
 
+CURRENT_DIR = os.getcwd()
+DATA_DIR = CURRENT_DIR.split('cs175-project')[0] + "cs175-project/data"
 
 class Synthesizer:
     def __init__(self):
@@ -76,11 +79,11 @@ class Synthesizer:
         return new_article
 
     def load_freq(self):
-        freq_dist = pickle.load(open("../data/all_articles_frequencies", mode="rb"))
+        freq_dist = pickle.load(open(DATA_DIR + "/all_articles_frequencies", mode="rb"))
         freq_dist = nltk.FreqDist({k: v for k, v in freq_dist.items() if k.isalpha()})
 
         preprocess.remove_stopwords(freq_dist)
-        bag_of_words = synth.tagArticle([k for k, v in freq_dist.items() if v > 700])
+        bag_of_words = self.tagArticle([k for k, v in freq_dist.items() if v > 700])
 
         frequencies = defaultdict(list)
 
