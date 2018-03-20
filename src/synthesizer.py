@@ -2,7 +2,10 @@ from nltk import pos_tag
 import nltk
 from nltk import word_tokenize
 import pickle
-import src.preprocessing as preprocess
+try:
+    import preprocessing as preprocess
+except:
+    import src.preprocessing as preprocess
 from collections import defaultdict
 import random
 

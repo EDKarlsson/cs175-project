@@ -21,15 +21,16 @@ from keras.regularizers import l2
 parser = argparse.ArgumentParser()
 parser.add_argument("--publication", type=str, help="Set the model type [publication]", default="all")
 parser.add_argument("--epochs", type=int, help="Number of epochs", default=30)
-parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=5000)
-parser.add_argument("--articles", type=int, help="Number of articles", default=10000)
+parser.add_argument("--vocab", type=int, help="Size of the vocabulary.", default=3000)
+parser.add_argument("--articles", type=int, help="Number of articles", default=1000)
 parser.add_argument("--ngram", type=int, help="Use NGram to split strings", default=0)
 parser.add_argument("--verbose", type=bool, help="Verbose Keras output", default=True)
 parser.add_argument("--saveperepoch", type=int, help="Save model every x-epoch", default=1)
 parser.add_argument("--lstm", type=int, help="Units per LSTM layer in RNN", default=512)
 parser.add_argument("--gpu_memory", type=float, help="Set GPU Memory Limit", default=.8)
 parser.add_argument("--split", type=str, help="Char or string to split each sentence on.", default=" ")
-parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole", default="whole")
+parser.add_argument("--art_type", type=str, help="Type of article tokens. Sentences, summaries, whole",
+                    default="sentences")
 args = parser.parse_args()
 
 config = tf.ConfigProto()
@@ -43,7 +44,6 @@ model_type = args.publication  # string to define which folder to store trained 
 preproc.NUM_VOCAB = args.vocab
 h1_size = 100
 epochs = args.epochs
-
 
 """
 Creates training data, tokenizer, word map, length of sentences and a seed list
@@ -94,12 +94,14 @@ def create_vector_embedding(in_dim=preproc.NUM_VOCAB, out_dim=h1_size, input_len
     return embedding_layer
 
 
-def get_latest_model(model_type=model_type):
+def get_latest_model(model_type=model_type, model_path=""):
     """
     Searches the saved model directory for the latest one and loads it.
     :param model_type:
     :return:
     """
+    if len(model_path) > 1:
+        return keras.models.load_model(model_path)
     try:
         name = os.listdir('saved_models/' + model_type)
         iteration = sorted(name)[-1]
@@ -142,6 +144,7 @@ def define_model():
     """
     name, model = get_latest_model()
     if model != None:
+        model.summary()
         return model
     return create_model()
 

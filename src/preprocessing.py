@@ -141,7 +141,7 @@ def load_sentence_tokens(limit=10000, publication=None, overwrite=False):
     return sentences[:limit]
 
 
-def get_vectors(remake_binary=False):
+def get_vectors(type="", remake_binary=False):
     """
     Creates TFID vectors for the data set if it does not already exists. If it does, load the vectors and return them.
     :param remake_binary: Recreate the TFID Vector files
@@ -150,24 +150,36 @@ def get_vectors(remake_binary=False):
     print("Loading vectors...")
     if "src" in CURRENT_DIR:
         os.chdir("..")
-        data_dir = os.getcwd() + "/data/"
+        data_dir = os.getcwd() + "/data"
         os.chdir(CURRENT_DIR)
     else:
         data_dir = CURRENT_DIR + "/data"
 
-    if remake_binary or os.path.isfile(data_dir + "tfid_vectors") == False:
-        data = load_data()
-        publishers = list(set(data['publication']))
-        vectorizer = TfidfVectorizer()
-        vectors = vectorizer.fit_transform(data['content'])
-        print("Saving Vectors")
-        pickle.dump(vectors, open(data_dir + "tfid_vectors", "wb"))
-        pickle.dump(publishers, open(data_dir + "publishers", "wb"))
+    vectorizer = TfidfVectorizer()
+    publishers = []
 
+    if type == "fake":
+        fake_articles = os.listdir(data_dir+ "/generated_articles/")
+        data_set = []
+        for fa in fake_articles:
+            if fa != '.DS_Store':
+                f = open(data_dir + "/generated_articles/" + fa)
+                data_set.append(f.readline())
+        # data_set = list(set(data_set))
+        vectors = vectorizer.fit_transform(data_set)
     else:
-        print("Loading pickle vector data")
-        vectors = pickle.load(open(data_dir + "tfid_vectors", "rb"))
-        publishers = list(pickle.load(open(data_dir + "publishers", "rb")))
+        if remake_binary or os.path.isfile(data_dir + "tfid_vectors") == False:
+            data = load_data()
+            publishers = list(set(data['publication']))
+            vectors = vectorizer.fit_transform(data['content'])
+            print("Saving Vectors")
+            pickle.dump(vectors, open(data_dir + "tfid_vectors", "wb"))
+            pickle.dump(publishers, open(data_dir + "publishers", "wb"))
+
+        else:
+            print("Loading pickle vector data")
+            vectors = pickle.load(open(data_dir + "tfid_vectors", "rb"))
+            publishers = list(pickle.load(open(data_dir + "publishers", "rb")))
     return vectors, publishers
 
 
